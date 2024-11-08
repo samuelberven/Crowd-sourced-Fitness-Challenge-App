@@ -2,7 +2,7 @@ import { config } from "https://deno.land/x/dotenv/mod.ts";
 
 // Load env variables
 // Note: I used eslint-disable-next-line no-unused-vars
-const env = config({ path: "../../.env.edge" });
+// const env = config({ path: "../../.env.edge" });
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -10,9 +10,9 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // For testing
-console.log("SUPABASE_URL:", supabaseUrl);
-console.log("SUPABASE_SERVICE_ROLE_KEY:", supabaseServiceKey);
-console.log("SUPABASE_ANON_KEY:", supabaseAnonKey);
+// console.log("SUPABASE_URL:", supabaseUrl);
+// console.log("SUPABASE_SERVICE_ROLE_KEY:", supabaseServiceKey);
+// console.log("SUPABASE_ANON_KEY:", supabaseAnonKey);
 
 // Validate env variables
 if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
@@ -34,11 +34,55 @@ const supabaseFetch = async (url: string, options: RequestInit) => {
 
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message);
+    let errorData;
+    try {
+      // Attempt to parse the response as JSON
+      errorData = await response.json();
+    } catch (e) {
+      // If JSON parsing fails, log as plain text
+      errorData = await response.text();
+    }
+
+    // Check for specific 429 rate limit error
+    if (response.status === 429) {
+      // Custom error message for rate limiting
+      throw new Error("Too many sign-up attempts. Please try again later.");
+    }
+
+    // Log the response status code and the raw error data for debugging
+    console.error("Error response:", {
+      status: response.status,
+      errorData: errorData,
+    });
+
+    // Provide more descriptive error
+    throw new Error(errorData.message || errorData || "Unknown error occurred");
   }
+
   return await response.json();
 };
+
+// const handleResponse = async (response: Response) => {
+//   if (!response.ok) {
+//     let errorData;
+//     try {
+//       errorData = await response.json(); // Try to parse as JSON
+//     } catch (e) {
+//       errorData = await response.text(); // If JSON parsing fails, try text
+//     }
+//     console.error("Error response:", errorData); // Log the error response
+//     throw new Error(errorData.message || "Unknown error occurred");
+//   }
+//   return await response.json();
+// };
+
+// const handleResponse = async (response: Response) => {
+//   if (!response.ok) {
+//     const errorData = await response.json();
+//     throw new Error(errorData.message);
+//   }
+//   return await response.json();
+// };
 
 // Validate JWT
 const validateJWT = async (token: string) => {
@@ -136,6 +180,8 @@ const createUser = async (
     );
   }
 
+  console.log("Creating user with email:", body.email);
+
   // Sign up user with Supabase Auth
   const response = await supabaseFetch(`${supabaseUrl}/auth/v1/signup`, {
     method: "POST",
@@ -145,17 +191,51 @@ const createUser = async (
     }),
   });
 
-  const authData = await handleResponse(response);
+  console.log("Signup response status:", response.status);
 
-  if (!response.ok) {
+  // Handle the response and check for errors
+  let authData;
+  try {
+    authData = await response.json(); // Parse response as JSON
+    console.log("Auth Data:", authData); // Log the full response from Supabase
+  } catch (e) {
+    console.error("Error parsing response:", e);
     return new Response(
-      JSON.stringify({ error: authData.error || "Failed to sign up" }),
-      { status: 400 }
+      JSON.stringify({ error: "Failed to parse signup response" }),
+      { status: 500 }
+    );
+  }
+
+  // const authData = await handleResponse(response);
+  // console.log("Auth Data:", authData); // Log full response from Supabase Auth
+
+  // if (!response.ok) {
+  //   return new Response(
+  //     JSON.stringify({ error: authData.error || "Failed to sign up" }),
+  //     { status: 400 }
+  //   );
+  // }
+
+  // If response is not OK or there's no user object, handle the error
+  if (response.status !== 200 || !authData?.user) {
+    // Check for a specific error like "email already exists"
+    if (authData?.error) {
+      return new Response(
+        JSON.stringify({ error: authData.error.message || "Signup failed" }),
+        { status: 400 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: "Unknown error occurred during signup" }),
+      { status: 500 }
     );
   }
 
   // After successful signup, insert user details into the database
   const { user } = authData;
+  console.log("User object:", user); // Log the user object to verify
+
   // Test if there is no user ID to be found
   if (!user || !user.id) {
     return new Response(
