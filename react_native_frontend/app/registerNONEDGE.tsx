@@ -1,18 +1,10 @@
 import React, { useState } from "react";
-import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Text,
-  Alert,
-  StyleSheet,
-} from "react-native";
+import { View, TextInput, TouchableOpacity, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "../src/config/supabaseClient";
 import { useTheme } from "../src/context/ThemeContext";
-// const edgeFunctionUrl = `${SUPABASE_URL}/auth/v1/signup`; // Edge function URL
-const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/users`;
->>>>>>> 3058f51 (Sync up (Supabase Auth email settings are fixed -- MARKING POINT))
+import ScreenContainer from "../components/ScreenContainer";
+import styles from "../components/ScreenStyles";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -43,29 +35,16 @@ export default function RegisterScreen() {
 
     const user = data?.user; // Accessing user from the data object
 
-<<<<<<< HEAD
-      // Debugging: Log response status and data
-<<<<<<< HEAD
-      // console.log("Response status:", response.status);
-      const data = await response.json();
-      // console.log("Response data:", data);
-=======
-      console.log("Response status:", response.status);
-      const data = await response.json();
-      console.log("Response data:", data);
->>>>>>> feb619d (Environment variables are showing up now)
-=======
     // Debugging output
     console.log("Sign-up response:", { user, error });
-    // // Note: delete this after figuring out whiy the uuid isn't being inserted in the users entry
+    // // Note: delete this after figuring out why the uuid isn't being inserted in the users entry
     // console.log("User object:", user, error);
->>>>>>> 3058f51 (Sync up (Supabase Auth email settings are fixed -- MARKING POINT))
 
     if (error) {
       console.error("Sign-up error:", error);
       Alert.alert("Registration Error", error.message);
       setLoading(false);
-      return; // todo: doublecheck if returning here is the best approach
+      return; // todo: double check if returning here is the best approach
     }
 
     // Insert new user data (with uuid) into PostgreSQL database
@@ -89,12 +68,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        theme === "dark" ? styles.darkContainer : styles.lightContainer,
-      ]}
-    >
+    <ScreenContainer>
       <Text
         style={[
           styles.appName,
@@ -108,6 +82,7 @@ export default function RegisterScreen() {
         style={[
           styles.formContainer,
           theme === "dark" ? styles.darkForm : styles.lightForm,
+          { alignItems: "center", paddingVertical: 20 },
         ]}
       >
         <Text
@@ -141,7 +116,7 @@ export default function RegisterScreen() {
         <TextInput
           placeholder="Username"
           placeholderTextColor={theme === "dark" ? "#999" : "#999"}
-          value={username} // New username input
+          value={username}
           onChangeText={setUsername}
           style={[
             styles.input,
@@ -186,6 +161,7 @@ export default function RegisterScreen() {
           style={[
             styles.button,
             theme === "dark" ? styles.darkButton : styles.lightButton,
+            { width: "45%" },
           ]}
           onPress={handleRegister}
           disabled={loading}
@@ -203,97 +179,6 @@ export default function RegisterScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  darkContainer: {
-    backgroundColor: "#121212",
-  },
-  lightContainer: {
-    backgroundColor: "#f7f9fc",
-  },
-  appName: {
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  darkAppName: {
-    color: "#b05600",
-  },
-  lightAppName: {
-    color: "#f48c42",
-  },
-  darkText: {
-    color: "#fff",
-  },
-  lightText: {
-    color: "#000",
-  },
-  formContainer: {
-    width: "90%",
-    maxWidth: 400,
-    padding: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-  },
-  darkForm: {
-    backgroundColor: "#333",
-  },
-  lightForm: {
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  darkInput: {
-    borderColor: "#666",
-    color: "#fff",
-  },
-  lightInput: {
-    borderColor: "#ccc",
-    color: "#000",
-  },
-  button: {
-    backgroundColor: "#f48c42",
-    paddingVertical: 12,
-    borderRadius: 30,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  darkButton: {
-    backgroundColor: "#b05600",
-  },
-  lightButton: {
-    backgroundColor: "#f48c42",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  linkText: {
-    fontSize: 14,
-    textAlign: "center",
-  },
-});

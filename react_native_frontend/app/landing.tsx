@@ -1,112 +1,71 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Switch } from "react-native";
+import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { useRouter } from "expo-router";
 import { useTheme } from "../src/context/ThemeContext";
+import styles from "../components/ScreenStyles";
+import ScreenContainer from "../components/ScreenContainer";
 
 export default function LandingScreen() {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <View
-      style={[
-        styles.container,
-        theme === "dark" ? styles.darkContainer : styles.lightContainer,
-      ]}
-    >
-      <View style={styles.topBar}>
-        <Switch
-          value={theme === "dark"}
-          onValueChange={toggleTheme}
-          thumbColor={theme === "dark" ? "#fff" : "#f48c42"}
-          trackColor={{ false: "#ccc", true: "#333" }}
-        />
-      </View>
+    <ScreenContainer>
+      <Switch
+        style={styles.toggleContainer}
+        value={theme === "dark"}
+        onValueChange={toggleTheme}
+        thumbColor={theme === "dark" ? "#fff" : "#f48c42"}
+        trackColor={{ false: "#ccc", true: "#333" }}
+      />
 
       <Text
         style={[
-          styles.title,
-          theme === "dark" ? styles.darkText : styles.lightText,
+          styles.appName,
+          theme === "dark" ? styles.darkAppName : styles.lightAppName,
         ]}
       >
         FitTogether Challenges
       </Text>
 
-      <TouchableOpacity
+      <View
         style={[
-          styles.loginButton,
-          theme === "dark" ? styles.darkButton : styles.lightButton,
+          styles.formContainer,
+          theme === "dark" ? styles.darkForm : styles.lightForm,
+          { alignItems: "center", paddingVertical: 20 },
         ]}
-        onPress={() => router.push("/login")}
       >
-        <Text style={styles.buttonText}>Log In</Text>
-      </TouchableOpacity>
+        <Text
+          style={[
+            styles.title,
+            theme === "dark" ? styles.darkText : styles.lightText,
+          ]}
+        >
+          Your next challenge awaits!
+        </Text>
 
-      <TouchableOpacity
-        style={[
-          styles.signupButton,
-          theme === "dark" ? styles.darkButton : styles.lightButton,
-        ]}
-        onPress={() => router.push("/register")}
-      >
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            theme === "dark" ? styles.darkButton : styles.lightButton,
+            { marginVertical: 8, width: "35%" },
+          ]}
+          onPress={() => router.push("/login")}
+        >
+          <Text style={styles.buttonText}>Log In</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            theme === "dark" ? styles.darkButton : styles.lightButton,
+            { marginVertical: 12, width: "45%" },
+          ]}
+          onPress={() => router.push("/register")}
+        >
+          <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
+      </View>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  topBar: {
-    position: "absolute",
-    top: 50,
-    right: 20,
-  },
-  darkContainer: {
-    backgroundColor: "#121212",
-  },
-  lightContainer: {
-    backgroundColor: "#f7f9fc",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "bold",
-    marginBottom: 40,
-  },
-  lightText: {
-    color: "#000",
-  },
-  darkText: {
-    color: "#fff",
-  },
-  loginButton: {
-    backgroundColor: "#f48c42",
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 30,
-    marginBottom: 10,
-  },
-  signupButton: {
-    backgroundColor: "#f48c42",
-    paddingVertical: 15,
-    paddingHorizontal: 60,
-    borderRadius: 30,
-    marginBottom: 20,
-  },
-  darkButton: {
-    backgroundColor: "#333",
-  },
-  lightButton: {
-    backgroundColor: "#f48c42",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-});
