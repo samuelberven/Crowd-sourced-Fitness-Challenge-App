@@ -14,16 +14,30 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // For testing
-console.log("SUPABASE_URL:", supabaseUrl);
-console.log("SUPABASE_ANON_KEY:", supabaseAnonKey);
-console.log("SUPABASE_SERVICE_KEY:", supabaseServiceKey);
+// console.log("SUPABASE_URL:", supabaseUrl);
+// console.log("SUPABASE_ANON_KEY:", supabaseAnonKey);
+// console.log("SUPABASE_SERVICE_KEY:", supabaseServiceKey);
 
-// Validate env variables
-if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-  throw new Error("Environment variables are not set correctly.");
-}
+// Helper function to validate env variables
+// Todo: refactor to return specific environment variable that isn't working
+const validateSupabaseEnvVariables = () => {
+  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+    throw new Error("Environment variables are not set correctly.");
+  }
+};
 
-// Fetch data
+validateSupabaseEnvVariables();
+
+// note: maybe
+// Standardized error resonse creation helper function
+// const createErrorResponse = (message: string, status: number) => {
+//   return new Response(
+//     JSON.stringify( {error: message} ),
+//     { status, headers: corsHeaders(*) }
+//   );
+// };
+
+// Fetch data from Supabase
 const supabaseFetch = async (url: string, options: RequestInit) => {
   const response = await fetch(url, {
     ...options,
@@ -37,26 +51,25 @@ const supabaseFetch = async (url: string, options: RequestInit) => {
 };
 
 const handleResponse = async (response: Response) => {
-  // Check if the response was successful (status 200-299)
   if (!response.ok) {
-    // If the response is not OK, throw an error with the message from the response
+    // If response not successful, throw error with response message
     const errorData = await response.json();
     throw new Error(errorData.message);
   }
 
-  // Read the response text (could be empty)
+  // Read response text (can be empty, which is why text() is used)
   const text = await response.text();
 
-  // If the response body is empty, return an empty object
+  // If response body empty, return empty object
   if (!text) {
     return {};
   }
 
+  // Try to parse text as JSON
   try {
-    // Try to parse the text as JSON
     return JSON.parse(text);
   } catch (error) {
-    // If parsing fails, log the error and return an empty object
+    // If parsing fails, log error and return empty object
     console.error("Error parsing response:", error);
     return {};
   }
@@ -75,21 +88,26 @@ const validateJWT = async (token: string) => {
     throw new Error("Invalid JWT");
   }
 
-  return await response.json();
+  const userData = await response.json();
+  // Note: following three lines should handle expired token if needed --
+  // todo: Need to test this once JWT are enabled
+  // if (new Date(userData.expires_at) < new Date()) {
+  //   throw new Error("Token has expired");
+  // }
+  return userData;
 };
 
 // Defines CORS globally, so we don't need to paste it in to every route function
-// CORS headers to be added to all responses
-// Todo: That means all responses for all routes
+// todo: CORS headers to be added to all responses-- That means all responses for all routes
 const corsHeaders = {
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*", // Replace '*' with the frontend domain once its deployed (for security reasons)
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS", // Allow the HTTP methods
+  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS", // Allow the HTTP methods + Options (for CORS)
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey", // Allow headers for the request
 };
 
 const handleRequest = async (req: Request) => {
-  // Handle preflight OPTIONS requests
+  // Handle preflight OPTIONS requests. Note: this is what was causing the main issues
   if (req.method === "OPTIONS") {
     console.log("Handling OPTIONS request");
     return new Response(null, {
@@ -111,14 +129,19 @@ const handleRequest = async (req: Request) => {
 
     switch (req.method) {
       case "GET":
+        // return id && !isNaN(Number(id)) ? await getUser(id) : await getUsers();
+
+        // New route for /users/userbyuuid/{uuid}
+        if (path[2] === "userbyuuid" && id) {
+          return await getUserByUuid(id);
+        }
+        // Regular user GET route
         return id && !isNaN(Number(id)) ? await getUser(id) : await getUsers();
 
       case "POST":
         return await createUser(await req.json());
-
       case "PATCH":
         return await updateUser(id, await req.json());
-
       case "DELETE":
         return await deleteUser(id);
 
@@ -135,6 +158,27 @@ const handleRequest = async (req: Request) => {
       headers: corsHeaders,
     });
   }
+};
+
+// Handler to fetch user by UUID
+const getUserByUuid = async (uuid: string) => {
+  const response = await supabaseFetch(
+    `${supabaseUrl}/rest/v1/users?uuid=eq.${uuid}`,
+    { method: "GET" }
+  );
+  const data = await handleResponse(response);
+
+  if (!data || data.length === 0) {
+    return new Response(JSON.stringify({ error: "User not found" }), {
+      status: 404,
+      headers: corsHeaders,
+    });
+  }
+
+  return new Response(JSON.stringify(data[0]), {
+    status: 200,
+    headers: corsHeaders,
+  });
 };
 
 // Handlers for different HTTP methods
@@ -168,7 +212,7 @@ const createUser = async (body: {
   email: string;
   password: string;
 }) => {
-  // Basic validation: check if all required fields are present
+  // Check if all required fields are present
   if (!body.name || !body.username || !body.email || !body.password) {
     return new Response(
       JSON.stringify({
@@ -216,9 +260,9 @@ const createUser = async (body: {
     );
   }
 
-  console.log("User ID from signup:", userId);
+  // console.log("User ID from signup:", userId);
 
-  // Step 3: Insert user details into the 'users' table in the Supabase database
+  // Step 3: Insert user details into the 'users' table in the Supabase PostgreSQL database
   const dbResponse = await supabaseFetch(`${supabaseUrl}/rest/v1/users`, {
     method: "POST",
     headers: {
@@ -228,11 +272,11 @@ const createUser = async (body: {
     body: JSON.stringify({
       name: body.name,
       username: body.username,
-      uuid: userId,  // Use the 'id' from authData as the UUID for the user
+      uuid: userId, // Use the 'id' from authData as the UUID for the user
     }),
   });
 
-  // Handle the response from the database
+  // Handle response from database
   const data = await handleResponse(dbResponse);
 
   // If there's an error inserting into the database, return an error response
@@ -245,9 +289,9 @@ const createUser = async (body: {
     );
   }
 
-  // Step 4: Return the newly created user data
+  // Step 4: Return newly created user data
   return new Response(JSON.stringify(data), {
-    status: 201, // 201 Created
+    status: 201,
     headers: corsHeaders,
   });
 };
