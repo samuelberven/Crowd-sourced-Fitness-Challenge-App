@@ -153,7 +153,7 @@ This app enables users to create and participate in community-driven fitness cha
 
 1. In the frontend root folder, run  
    ```bash
-   npx expo export
+   npx expo export --platform web
    ```
 
 2. If there is trouble running the linter after exporting a build, run:
