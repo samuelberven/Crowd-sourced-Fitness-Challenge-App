@@ -184,41 +184,5 @@ router.delete("/:id", async (req: any, res: any) => {
       .json({ error: "Unable to delete challenge-goal relationship." });
   }
 });
-// router.delete("/", async (req: any, res: any) => {
-//   const { challenge_id, goal_id } = req.body;
-
-//   if (!challenge_id || !goal_id) {
-//     return res
-//       .status(400)
-//       .json({ error: "Challenge ID and Goal ID are required." });
-//   }
-
-//   try {
-//     const { data, error } = await supabase
-//       .from("challenge_goals")
-//       .delete()
-//       .match({ challenge_id, goal_id })
-//       .select(); // Use .select() to get the deleted row(s)
-
-//     if (error) {
-//       throw error;
-//     }
-
-//     // Check if data is null or an empty array
-//     // This was what was messing up before
-//     if (!data || (Array.isArray(data) && data.length === 0)) {
-//       return res
-//         .status(404)
-//         .json({ error: "Challenge-Goal relationship not found." });
-//     }
-
-//     res.status(204).send();
-//   } catch (err) {
-//     console.error(err);
-//     res
-//       .status(500)
-//       .json({ error: "Unable to delete challenge-goal relationship." });
-//   }
-// });
 
 export default router;

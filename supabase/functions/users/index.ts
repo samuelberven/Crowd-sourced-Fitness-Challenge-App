@@ -25,15 +25,6 @@ const validateSupabaseEnvVariables = () => {
 
 validateSupabaseEnvVariables();
 
-// note: maybe
-// Standardized error response creation helper function
-// const createErrorResponse = (message: string, status: number) => {
-//   return new Response(
-//     JSON.stringify( {error: message} ),
-//     { status, headers: corsHeaders(*) }
-//   );
-// };
-
 // Fetch data from Supabase
 const supabaseFetch = async (url: string, options: RequestInit) => {
   const response = await fetch(url, {

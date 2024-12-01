@@ -15,7 +15,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // CORS headers to allow frontend access
 const corsHeaders = {
   "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*", // Replace "*" with frontend URL if frontend is deployed
+  "Access-Control-Allow-Origin": "*", // Replace "*" with frontend URL once frontend is deployed
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS", // Allow these methods for CORS
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey", // Allow headers for requests
 };
